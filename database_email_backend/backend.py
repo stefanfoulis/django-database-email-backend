@@ -10,14 +10,14 @@ class DatabaseEmailBackend(BaseEmailBackend):
             return
         for message in email_messages:
             email = Email.objects.create(
-                from_email = message.from_email,
-                to_emails = ', '.join(message.to),
-                cc_emails = ', '.join(message.cc),
-                bcc_emails = ', '.join(message.bcc),
-                all_recipients = ', '.join(message.recipients()),
-                subject = message.subject,
-                body = message.body,
-                raw = message.message().as_string()
+                from_email = u'%s' % message.from_email,
+                to_emails = u', '.join(message.to),
+                cc_emails = u', '.join(message.cc),
+                bcc_emails = u', '.join(message.bcc),
+                all_recipients = u', '.join(message.recipients()),
+                subject = u'%s' % message.subject,
+                body = u'%s' % message.body,
+                raw = u'%s' % message.message().as_string()
             )
             for attachment in message.attachments:
                 if isinstance(attachment, tuple):
