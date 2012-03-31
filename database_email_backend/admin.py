@@ -1,10 +1,21 @@
 #-*- coding: utf-8 -*-
+from django.http import HttpResponseRedirect
 from django.contrib import admin
+from django import forms
 from django.http import HttpResponse
 from django.core.urlresolvers import reverse
+from django.core.mail import message
 from django.db.models import Count
 from django.utils.functional import update_wrapper
 from database_email_backend.models import Email, Attachment
+from django.utils.translation import ugettext as _
+
+WIDE_INPUT_SIZE = '80'
+
+
+###################
+# view sent email #
+###################
 
 
 class AttachmentInlineAdmin(admin.TabularInline):
@@ -77,3 +88,71 @@ class EmailAdmin(admin.ModelAdmin):
 
 admin.site.register(Email, EmailAdmin)
 
+
+##############
+# send email #
+##############
+
+
+class SendEmail(Email):
+    class Meta:
+        proxy = True
+
+
+class SendEmailForm(forms.ModelForm):
+    class Meta:
+        model = SendEmail
+        widgets = {
+            'from_email': forms.TextInput(attrs={'size': '30'}),
+            'to_emails': forms.TextInput(attrs={'size': WIDE_INPUT_SIZE}),
+            'cc_emails': forms.TextInput(attrs={'size': WIDE_INPUT_SIZE}),
+            'bcc_emails': forms.TextInput(attrs={'size': WIDE_INPUT_SIZE}),
+            'subject': forms.TextInput(attrs={'size': WIDE_INPUT_SIZE}),
+        }
+        
+
+
+class SendEmailAdmin(admin.ModelAdmin):
+    form = SendEmailForm
+    fieldsets = (
+        (None, {'fields':('from_email', 'to_emails')}),
+        (_('cc and bcc'), {
+            'fields': ('cc_emails', 'bcc_emails'),
+            'classes': ('collapse',)}),
+        (None, {'fields': ('subject', 'body')}),
+    )
+    
+    def save_model(self, request, obj, form, change):
+        """
+        sends the email and does not save it
+        """
+        email = message.EmailMessage(
+            subject=obj.subject,
+            body=obj.body,
+            from_email=obj.from_email,
+            to=[t.strip() for t in obj.to_emails.split(',')],
+            bcc=[t.strip() for t in obj.bcc_emails.split(',')],
+            cc=[t.strip() for t in obj.cc_emails.split(',')]
+        )
+        email.send()
+
+    def response_add(self, request, obj, post_url_continue=None):
+        msg = _('The Email was sent successfully.')
+        self.message_user(request, msg)
+        if "_addanother" in request.POST:
+            return HttpResponseRedirect(request.path)
+        return HttpResponseRedirect('../../')
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def get_model_perms(self, request):
+        return {
+            'add': self.has_add_permission(request),
+            'change': False,
+            'delete': False
+        }
+admin.site.register(SendEmail, SendEmailAdmin)
