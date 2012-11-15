@@ -7,8 +7,10 @@ from django.core.urlresolvers import reverse
 from django.core.mail import message
 from django.db.models import Count
 from django.utils.functional import update_wrapper
-from database_email_backend.models import Email, Attachment
 from django.utils.translation import ugettext as _
+from django.template.defaultfilters import linebreaks_filter
+
+from database_email_backend.models import Email, Attachment
 
 WIDE_INPUT_SIZE = '80'
 
@@ -42,7 +44,7 @@ class EmailAdmin(admin.ModelAdmin):
     date_hierarchy = 'sent_at'
     search_fields =  ('from_email', 'to_emails', 'subject', 'body',)
     exclude = ('raw',)
-    readonly_fields = list_display + ('cc_emails', 'bcc_emails', 'all_recipients', 'headers', 'body',)
+    readonly_fields = list_display + ('cc_emails', 'bcc_emails', 'all_recipients', 'headers', 'body_br',)
     inlines = (AttachmentInlineAdmin,)
     
     def queryset(self, request):
@@ -85,6 +87,12 @@ class EmailAdmin(admin.ModelAdmin):
         response = HttpResponse(attachment.content, mimetype=attachment.mimetype or 'application/octet-stream')
         response["Content-Length"] = len(attachment.content)
         return response
+
+    def body_br(self, obj):
+        return linebreaks_filter(obj.body)
+    body_br.allow_tags = True
+    body_br.short_description = 'body'
+    body_br.admin_order_field = 'body'
 
 admin.site.register(Email, EmailAdmin)
 
