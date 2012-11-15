@@ -43,7 +43,7 @@ class EmailAdmin(admin.ModelAdmin):
     list_display = ('from_email', 'to_emails', 'subject', 'body_stripped', 'sent_at', 'attachment_count')
     date_hierarchy = 'sent_at'
     search_fields =  ('from_email', 'to_emails', 'subject', 'body',)
-    exclude = ('raw',)
+    exclude = ('raw', 'body')
     readonly_fields = list_display + ('cc_emails', 'bcc_emails', 'all_recipients', 'headers', 'body_br',)
     inlines = (AttachmentInlineAdmin,)
     
