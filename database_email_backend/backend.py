@@ -1,14 +1,14 @@
 #-*- coding: utf-8 -*-
 from email.MIMEBase import MIMEBase
+
 from django.core.mail.backends.base import BaseEmailBackend
 from django.utils.encoding import smart_unicode
+
 from database_email_backend.models import Email, Attachment
 
 
 class DatabaseEmailBackend(BaseEmailBackend):
     def send_messages(self, email_messages):
-        if not email_messages:
-            return
         for message in email_messages:
             email = Email.objects.create(
                 from_email = u'%s' % message.from_email,
@@ -35,3 +35,5 @@ class DatabaseEmailBackend(BaseEmailBackend):
                     content=content,
                     mimetype=mimetype
                 )
+        return len(email_messages)
+
